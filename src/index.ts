@@ -238,7 +238,7 @@ server.tool(
 // ─── ddb_list_library ─────────────────────────────────────────────────────────
 server.tool(
   "ddb_list_library",
-  "List all books and sourcebooks you own in your D&D Beyond library.",
+  "List all books you own in your D&D Beyond library, including sourcebooks, adventures, and supplements.",
   {},
   async () => {
     try {

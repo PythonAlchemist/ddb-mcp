@@ -1,3 +1,6 @@
+import { writeFileSync, mkdirSync } from "fs";
+import { dirname, basename, extname, join } from "path";
+import { homedir } from "os";
 import { getPage } from "../browser.js";
 export async function navigate(context, url) {
     const page = await getPage(context);
@@ -41,6 +44,36 @@ export async function interact(context, action, selector, value) {
         default:
             throw new Error(`Unknown action: ${action}. Use 'click', 'fill', or 'screenshot'.`);
     }
+}
+export async function downloadImage(context, url, outputPath) {
+    // Only allow D&D Beyond media URLs
+    if (!url.startsWith("https://media.dndbeyond.com") &&
+        !url.startsWith("https://www.dndbeyond.com")) {
+        throw new Error("Only D&D Beyond URLs (media.dndbeyond.com or www.dndbeyond.com) are supported.");
+    }
+    // Determine output path
+    const filename = basename(new URL(url).pathname) || `image-${Date.now()}.png`;
+    const resolvedPath = outputPath
+        ? outputPath
+        : join(homedir(), "Downloads", filename);
+    // Ensure output directory exists
+    mkdirSync(dirname(resolvedPath), { recursive: true });
+    // Use the browser context's request API to share cookies/session
+    const response = await context.request.get(url);
+    if (!response.ok()) {
+        throw new Error(`Download failed: HTTP ${response.status()} ${response.statusText()}`);
+    }
+    const buffer = await response.body();
+    writeFileSync(resolvedPath, buffer);
+    const ext = extname(resolvedPath).toLowerCase();
+    const sizeKB = Math.round(buffer.length / 1024);
+    return JSON.stringify({
+        path: resolvedPath,
+        filename: basename(resolvedPath),
+        size: `${sizeKB} KB`,
+        type: ext.replace(".", ""),
+        url,
+    });
 }
 export async function getCurrentPageContent(context) {
     const page = await getPage(context);

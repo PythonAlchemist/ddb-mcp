@@ -5,7 +5,7 @@ import { getBrowser, getContext } from "./browser.js";
 import { login } from "./auth.js";
 import { getCharacter, downloadCharacter, scrapeCharacterSheet, listCharacters } from "./tools/character.js";
 import { getCampaign, listMyCampaigns } from "./tools/campaign.js";
-import { navigate, interact, getCurrentPageContent } from "./tools/navigate.js";
+import { navigate, interact, getCurrentPageContent, downloadImage } from "./tools/navigate.js";
 import { search } from "./tools/search.js";
 import { listLibrary, readBook } from "./tools/library.js";
 const server = new McpServer({
@@ -150,6 +150,29 @@ server.tool("ddb_interact", "Interact with the currently loaded D&D Beyond page 
     catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text", text: `Interaction failed: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_download_image ──────────────────────────────────────────────────────
+server.tool("ddb_download_image", "Download an image from D&D Beyond (maps, illustrations, etc.) to a local file. Uses the authenticated browser session to access protected CDN content.", {
+    url: z
+        .string()
+        .describe("The image URL from media.dndbeyond.com (e.g. from ddb_read_book output or page scraping)"),
+    output_path: z
+        .string()
+        .optional()
+        .describe("Full file path to save to. If omitted, saves to ~/Downloads/ with the original filename."),
+}, async ({ url, output_path }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await downloadImage(context, url, output_path);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+            content: [{ type: "text", text: `Image download failed: ${msg}` }],
+            isError: true,
+        };
     }
 });
 // ─── ddb_current_page ─────────────────────────────────────────────────────────

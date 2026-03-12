@@ -26,14 +26,14 @@ export async function navigate(context: BrowserContext, url: string): Promise<st
     return (main as HTMLElement).innerText;
   });
 
-  const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
+  const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
 
   return `URL: ${url}\n\n${truncated}`;
 }
 
 export async function interact(
   context: BrowserContext,
-  action: "click" | "fill" | "screenshot",
+  action: "click" | "fill" | "screenshot" | "evaluate",
   selector: string,
   value?: string
 ): Promise<string> {
@@ -59,8 +59,20 @@ export async function interact(
       return `Screenshot saved to: ${screenshotPath}`;
     }
 
+    case "evaluate": {
+      // The selector field contains the JavaScript expression to evaluate.
+      // The expression is run in the page context and must return a
+      // JSON-serialisable value (or a string).
+      const result = await page.evaluate((expr: string) => {
+        // eslint-disable-next-line no-eval
+        const val = eval(expr);
+        return typeof val === "string" ? val : JSON.stringify(val, null, 2);
+      }, selector);
+      return result ?? "(no result)";
+    }
+
     default:
-      throw new Error(`Unknown action: ${action}. Use 'click', 'fill', or 'screenshot'.`);
+      throw new Error(`Unknown action: ${action}. Use 'click', 'fill', 'screenshot', or 'evaluate'.`);
   }
 }
 
@@ -74,6 +86,6 @@ export async function getCurrentPageContent(context: BrowserContext): Promise<st
     return (main as HTMLElement).innerText;
   });
 
-  const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n[truncated]" : content;
+  const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n[truncated]" : content;
   return `Current URL: ${url}\n\n${truncated}`;
 }

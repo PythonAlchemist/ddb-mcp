@@ -15,7 +15,7 @@ export async function navigate(context, url) {
         const main = document.querySelector("main, article, .main-content, .page-content, #content") ?? document.body;
         return main.innerText;
     });
-    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
+    const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
     return `URL: ${url}\n\n${truncated}`;
 }
 export async function interact(context, action, selector, value) {
@@ -38,8 +38,19 @@ export async function interact(context, action, selector, value) {
             await page.screenshot({ path: screenshotPath, fullPage: false });
             return `Screenshot saved to: ${screenshotPath}`;
         }
+        case "evaluate": {
+            // The selector field contains the JavaScript expression to evaluate.
+            // The expression is run in the page context and must return a
+            // JSON-serialisable value (or a string).
+            const result = await page.evaluate((expr) => {
+                // eslint-disable-next-line no-eval
+                const val = eval(expr);
+                return typeof val === "string" ? val : JSON.stringify(val, null, 2);
+            }, selector);
+            return result ?? "(no result)";
+        }
         default:
-            throw new Error(`Unknown action: ${action}. Use 'click', 'fill', or 'screenshot'.`);
+            throw new Error(`Unknown action: ${action}. Use 'click', 'fill', 'screenshot', or 'evaluate'.`);
     }
 }
 export async function getCurrentPageContent(context) {
@@ -50,7 +61,7 @@ export async function getCurrentPageContent(context) {
         const main = document.querySelector("main, article, .main-content, .page-content") ?? document.body;
         return main.innerText;
     });
-    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n[truncated]" : content;
+    const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n[truncated]" : content;
     return `Current URL: ${url}\n\n${truncated}`;
 }
 //# sourceMappingURL=navigate.js.map

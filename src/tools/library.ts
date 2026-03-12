@@ -102,8 +102,8 @@ export async function readBook(
 
   const trimmed = content.trim();
   const truncated =
-    trimmed.length > 12000
-      ? trimmed.slice(0, 12000) + "\n\n[Content truncated. Specify a chapter_slug to read a specific section.]"
+    trimmed.length > 50000
+      ? trimmed.slice(0, 50000) + "\n\n[Content truncated. Specify a chapter_slug to read a specific section.]"
       : trimmed;
 
   return `# ${bookSlug}${chapterSlug ? ` / ${chapterSlug}` : ""}\nURL: ${url}\n\n${truncated}`;

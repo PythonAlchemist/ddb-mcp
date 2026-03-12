@@ -89,6 +89,12 @@ export async function readBook(
       if (tag === "em" || tag === "i") return `_${childText}_`;
       if (tag === "hr") return `\n---\n`;
       if (tag === "br") return "\n";
+      if (tag === "img") {
+        const img = el as HTMLImageElement;
+        const alt = img.alt || "image";
+        const src = img.src || "";
+        return `\n![${alt}](${src})\n`;
+      }
       if (tag === "table") {
         // Simplify tables to text
         return `\n[Table]\n${childText}\n`;

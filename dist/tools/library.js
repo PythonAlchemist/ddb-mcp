@@ -4,7 +4,7 @@ export async function listLibrary(context) {
     if (!(await isLoggedIn(page))) {
         throw new Error("Not logged in. Please run ddb_login first.");
     }
-    await page.goto("https://www.dndbeyond.com/en/library?type=sourcebooks&ownership=owned-shared", {
+    await page.goto("https://www.dndbeyond.com/en/library?ownership=owned-shared", {
         waitUntil: "networkidle",
         timeout: 30000,
     });

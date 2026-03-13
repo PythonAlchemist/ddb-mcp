@@ -378,7 +378,7 @@ server.tool("ddb_list_my_creations", "List all your homebrew creations on D&D Be
     }
 });
 // ─── ddb_list_library ─────────────────────────────────────────────────────────
-server.tool("ddb_list_library", "List all books and sourcebooks you own in your D&D Beyond library.", {}, async () => {
+server.tool("ddb_list_library", "List all books you own in your D&D Beyond library, including sourcebooks, adventures, and supplements.", {}, async () => {
     try {
         const context = await getSharedContext();
         const books = await listLibrary(context);

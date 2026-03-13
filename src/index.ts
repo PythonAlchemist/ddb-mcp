@@ -175,12 +175,12 @@ server.tool(
 // ─── ddb_interact ─────────────────────────────────────────────────────────────
 server.tool(
   "ddb_interact",
-  "Interact with the currently loaded D&D Beyond page by clicking, filling a form field, or taking a screenshot.",
+  "Interact with the currently loaded D&D Beyond page by clicking, filling a form field, taking a screenshot, or evaluating JavaScript.",
   {
     action: z
-      .enum(["click", "fill", "screenshot"])
-      .describe("The action to perform: click an element, fill a text field, or take a screenshot"),
-    selector: z.string().describe("CSS selector or text selector for the target element"),
+      .enum(["click", "fill", "screenshot", "evaluate"])
+      .describe("The action to perform: click an element, fill a text field, take a screenshot, or evaluate a JS expression"),
+    selector: z.string().describe("CSS selector for click/fill/screenshot, or a JavaScript expression for evaluate"),
     value: z
       .string()
       .optional()

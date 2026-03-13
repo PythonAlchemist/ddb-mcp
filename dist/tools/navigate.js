@@ -18,7 +18,7 @@ export async function navigate(context, url) {
         const main = document.querySelector("main, article, .main-content, .page-content, #content") ?? document.body;
         return main.innerText;
     });
-    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
+    const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
     return `URL: ${url}\n\n${truncated}`;
 }
 export async function interact(context, action, selector, value) {
@@ -94,7 +94,7 @@ export async function getCurrentPageContent(context) {
         const main = document.querySelector("main, article, .main-content, .page-content") ?? document.body;
         return main.innerText;
     });
-    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n[truncated]" : content;
+    const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n[truncated]" : content;
     return `Current URL: ${url}\n\n${truncated}`;
 }
 //# sourceMappingURL=navigate.js.map

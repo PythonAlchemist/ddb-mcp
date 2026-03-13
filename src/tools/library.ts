@@ -89,6 +89,12 @@ export async function readBook(
       if (tag === "em" || tag === "i") return `_${childText}_`;
       if (tag === "hr") return `\n---\n`;
       if (tag === "br") return "\n";
+      if (tag === "img") {
+        const img = el as HTMLImageElement;
+        const alt = img.alt || "image";
+        const src = img.src || "";
+        return `\n![${alt}](${src})\n`;
+      }
       if (tag === "table") {
         // Simplify tables to text
         return `\n[Table]\n${childText}\n`;
@@ -102,8 +108,8 @@ export async function readBook(
 
   const trimmed = content.trim();
   const truncated =
-    trimmed.length > 12000
-      ? trimmed.slice(0, 12000) + "\n\n[Content truncated. Specify a chapter_slug to read a specific section.]"
+    trimmed.length > 50000
+      ? trimmed.slice(0, 50000) + "\n\n[Content truncated. Specify a chapter_slug to read a specific section.]"
       : trimmed;
 
   return `# ${bookSlug}${chapterSlug ? ` / ${chapterSlug}` : ""}\nURL: ${url}\n\n${truncated}`;

@@ -29,7 +29,7 @@ export async function navigate(context: BrowserContext, url: string): Promise<st
     return (main as HTMLElement).innerText;
   });
 
-  const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
+  const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n\n[Content truncated — use ddb_read_book or a more specific URL to get full content]" : content;
 
   return `URL: ${url}\n\n${truncated}`;
 }
@@ -135,6 +135,6 @@ export async function getCurrentPageContent(context: BrowserContext): Promise<st
     return (main as HTMLElement).innerText;
   });
 
-  const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n[truncated]" : content;
+  const truncated = content.length > 50000 ? content.slice(0, 50000) + "\n[truncated]" : content;
   return `Current URL: ${url}\n\n${truncated}`;
 }

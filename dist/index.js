@@ -7,6 +7,8 @@ import { getCharacter, downloadCharacter, scrapeCharacterSheet, listCharacters }
 import { getCampaign, listMyCampaigns } from "./tools/campaign.js";
 import { navigate, interact, getCurrentPageContent, downloadImage } from "./tools/navigate.js";
 import { search } from "./tools/search.js";
+import { getMonster, getSpell, getItem, getFeat, getRace, getClass, getBackground, getCondition, getRule, getEquipment, listMyCreations } from "./tools/compendium.js";
+import { editMonster, createMonster, editItem, createItem, deleteHomebrew } from "./tools/homebrew.js";
 import { listLibrary, readBook } from "./tools/library.js";
 const server = new McpServer({
     name: "dndbeyond",
@@ -205,6 +207,176 @@ server.tool("ddb_search", "Search D&D Beyond for spells, monsters, magic items, 
         return { content: [{ type: "text", text: `Search failed: ${msg}` }], isError: true };
     }
 });
+// Shared source param for compendium tools
+const sourceParam = z
+    .enum(["official", "homebrew", "my-creations"])
+    .optional()
+    .describe("Where to search: 'official' (default), 'homebrew' (community), or 'my-creations' (your own)");
+// ─── ddb_get_monster ─────────────────────────────────────────────────────────
+server.tool("ddb_get_monster", "Look up a monster on D&D Beyond and return structured stat block data (AC, HP, abilities, actions, etc.).", {
+    query: z.string().describe("Monster name to search for (e.g. 'Hook Horror', 'Beholder', 'Adult Red Dragon')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getMonster(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get monster: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_spell ──────────────────────────────────────────────────────────
+server.tool("ddb_get_spell", "Look up a spell on D&D Beyond and return structured data (level, school, components, description, etc.).", {
+    query: z.string().describe("Spell name to search for (e.g. 'Fireball', 'Arms of Hadar', 'Shield')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getSpell(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get spell: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_item ───────────────────────────────────────────────────────────
+server.tool("ddb_get_item", "Look up a magic item on D&D Beyond and return structured data (type, rarity, attunement, description, etc.).", {
+    query: z.string().describe("Magic item name to search for (e.g. 'Wand of Magic Missiles', 'Vorpal Sword')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getItem(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get item: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_feat ───────────────────────────────────────────────────────────
+server.tool("ddb_get_feat", "Look up a feat on D&D Beyond and return structured data (prerequisite, description, etc.).", {
+    query: z.string().describe("Feat name to search for (e.g. 'Great Weapon Master', 'Sharpshooter', 'Lucky')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getFeat(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get feat: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_race ───────────────────────────────────────────────────────────
+server.tool("ddb_get_race", "Look up a race/species on D&D Beyond and return structured data (traits, ability scores, speed, etc.).", {
+    query: z.string().describe("Race or species name to search for (e.g. 'Half-Elf', 'Dragonborn', 'Tiefling')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getRace(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get race: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_class ──────────────────────────────────────────────────────────
+server.tool("ddb_get_class", "Look up a class on D&D Beyond and return structured data (hit die, proficiencies, features, subclasses, etc.).", {
+    query: z.string().describe("Class name to search for (e.g. 'Ranger', 'Warlock', 'Paladin')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getClass(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get class: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_background ─────────────────────────────────────────────────────
+server.tool("ddb_get_background", "Look up a background on D&D Beyond and return structured data (skill proficiencies, equipment, features, etc.).", {
+    query: z.string().describe("Background name to search for (e.g. 'Acolyte', 'Criminal', 'Noble')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getBackground(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get background: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_condition ──────────────────────────────────────────────────────
+server.tool("ddb_get_condition", "Look up a condition (Blinded, Frightened, Stunned, Exhaustion, etc.) from the D&D free rules glossary.", {
+    query: z.string().describe("Condition name (e.g. 'Blinded', 'Frightened', 'Prone', 'Exhaustion')"),
+}, async ({ query }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getCondition(context, query);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get condition: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_rule ───────────────────────────────────────────────────────────
+server.tool("ddb_get_rule", "Look up a game rule from the D&D free rules (grappling, cover, opportunity attacks, long rest, etc.). Searches the rules glossary and core rule chapters.", {
+    query: z.string().describe("Rule name or topic to search for (e.g. 'Grapple', 'Cover', 'Opportunity Attack', 'Long Rest')"),
+}, async ({ query }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getRule(context, query);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get rule: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_get_equipment ──────────────────────────────────────────────────────
+server.tool("ddb_get_equipment", "Look up mundane equipment (weapons, armor, adventuring gear, tools) on D&D Beyond. For magic items, use ddb_get_item instead.", {
+    query: z.string().describe("Equipment name to search for (e.g. 'Longsword', 'Chain Mail', 'Thieves Tools')"),
+    source: sourceParam,
+}, async ({ query, source }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await getEquipment(context, query, (source ?? "official"));
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to get equipment: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_list_my_creations ──────────────────────────────────────────────────
+server.tool("ddb_list_my_creations", "List all your homebrew creations on D&D Beyond (monsters, items, spells, etc. from /my-creations).", {
+    type: z
+        .string()
+        .optional()
+        .describe("Filter by type: 'monster', 'item', 'spell', 'feat', 'background', 'class', 'subclass', or omit for all"),
+}, async ({ type }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await listMyCreations(context, type);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to list creations: ${msg}` }], isError: true };
+    }
+});
 // ─── ddb_list_library ─────────────────────────────────────────────────────────
 server.tool("ddb_list_library", "List all books and sourcebooks you own in your D&D Beyond library.", {}, async () => {
     try {
@@ -235,6 +407,140 @@ server.tool("ddb_read_book", "Read content from an owned D&D Beyond sourcebook. 
     catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text", text: `Failed to read book: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_edit_monster ────────────────────────────────────────────────────────
+const actionEntrySchema = z.object({ name: z.string(), description: z.string() });
+server.tool("ddb_edit_monster", "Edit an existing homebrew monster on D&D Beyond. Accepts structured JSON matching ddb_get_monster output. Only provided fields are updated.", {
+    id: z.string().describe("Monster ID from URL (e.g. '6287523-shadow-warden')"),
+    data: z.object({
+        name: z.string().optional(),
+        size: z.string().optional().describe("Tiny, Small, Medium, Large, Huge, Gargantuan"),
+        type: z.string().optional().describe("Aberration, Beast, Celestial, etc."),
+        alignment: z.string().optional(),
+        ac: z.string().optional(),
+        ac_type: z.string().optional(),
+        hp: z.string().optional(),
+        hit_dice: z.string().optional().describe("e.g. '20d8 + 140'"),
+        passive_perception: z.string().optional(),
+        challenge: z.string().optional().describe("CR value: '0', '1/4', '1/2', '1'-'30'"),
+        abilities: z.record(z.string(), z.object({
+            score: z.number(),
+            save: z.string().optional(),
+        })).optional().describe("Keyed by STR/DEX/CON/INT/WIS/CHA"),
+        traits: z.array(actionEntrySchema).optional(),
+        actions: z.array(actionEntrySchema).optional(),
+        bonus_actions: z.array(actionEntrySchema).optional(),
+        reactions: z.array(actionEntrySchema).optional(),
+        legendary_actions: z.array(actionEntrySchema).optional(),
+        mythic_actions: z.array(actionEntrySchema).optional(),
+        lair: z.array(actionEntrySchema).optional(),
+        lore: z.string().optional(),
+    }).describe("Fields to update (only provided fields are changed)"),
+}, async ({ id, data }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await editMonster(context, id, data);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to edit monster: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_create_monster ──────────────────────────────────────────────────────
+server.tool("ddb_create_monster", "Create a new homebrew monster on D&D Beyond. Accepts structured JSON matching ddb_get_monster output format. Name is required.", {
+    data: z.object({
+        name: z.string().describe("Monster name (required)"),
+        size: z.string().optional().describe("Tiny, Small, Medium, Large, Huge, Gargantuan"),
+        type: z.string().optional().describe("Aberration, Beast, Celestial, etc."),
+        alignment: z.string().optional(),
+        ac: z.string().optional(),
+        ac_type: z.string().optional(),
+        hp: z.string().optional(),
+        hit_dice: z.string().optional().describe("e.g. '20d8 + 140'"),
+        passive_perception: z.string().optional(),
+        challenge: z.string().optional().describe("CR value: '0', '1/4', '1/2', '1'-'30'"),
+        abilities: z.record(z.string(), z.object({
+            score: z.number(),
+            save: z.string().optional(),
+        })).optional().describe("Keyed by STR/DEX/CON/INT/WIS/CHA"),
+        traits: z.array(actionEntrySchema).optional(),
+        actions: z.array(actionEntrySchema).optional(),
+        bonus_actions: z.array(actionEntrySchema).optional(),
+        reactions: z.array(actionEntrySchema).optional(),
+        legendary_actions: z.array(actionEntrySchema).optional(),
+        mythic_actions: z.array(actionEntrySchema).optional(),
+        lair: z.array(actionEntrySchema).optional(),
+        lore: z.string().optional(),
+    }).describe("Monster data — name is required, all other fields optional"),
+}, async ({ data }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await createMonster(context, data);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to create monster: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_edit_item ───────────────────────────────────────────────────────────
+server.tool("ddb_edit_item", "Edit an existing homebrew magic item on D&D Beyond.", {
+    id: z.string().describe("Item ID from URL (e.g. '2399135-buster-sword')"),
+    data: z.object({
+        name: z.string().optional(),
+        type: z.string().optional(),
+        rarity: z.string().optional().describe("Common, Uncommon, Rare, Very Rare, Legendary, Artifact"),
+        attunement: z.boolean().optional(),
+        attunement_description: z.string().optional(),
+        description: z.string().optional().describe("Item description (HTML or plain text)"),
+    }).describe("Fields to update"),
+}, async ({ id, data }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await editItem(context, id, data);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to edit item: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_create_item ─────────────────────────────────────────────────────────
+server.tool("ddb_create_item", "Create a new homebrew magic item on D&D Beyond.", {
+    data: z.object({
+        name: z.string().describe("Item name (required)"),
+        type: z.string().optional(),
+        rarity: z.string().optional().describe("Common, Uncommon, Rare, Very Rare, Legendary, Artifact"),
+        attunement: z.boolean().optional(),
+        attunement_description: z.string().optional(),
+        description: z.string().optional().describe("Item description (HTML or plain text)"),
+    }).describe("Item data — name is required"),
+}, async ({ data }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await createItem(context, data);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to create item: ${msg}` }], isError: true };
+    }
+});
+// ─── ddb_delete_homebrew ──────────────────────────────────────────────────────
+server.tool("ddb_delete_homebrew", "Delete a homebrew monster or magic item from D&D Beyond. This is permanent and cannot be undone.", {
+    type: z.enum(["monster", "item"]).describe("Type of creation to delete"),
+    id: z.string().describe("Creation ID from URL (e.g. '6287636-test-goblin-boss')"),
+}, async ({ type, id }) => {
+    try {
+        const context = await getSharedContext();
+        const result = await deleteHomebrew(context, type, id);
+        return { content: [{ type: "text", text: result }] };
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text", text: `Failed to delete: ${msg}` }], isError: true };
     }
 });
 // ─── Start server ─────────────────────────────────────────────────────────────
